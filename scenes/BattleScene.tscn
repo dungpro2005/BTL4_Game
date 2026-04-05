@@ -1,0 +1,180 @@
+[gd_scene load_steps=2 format=3 uid="uid://battle_scene"]
+
+[ext_resource type="Script" path="res://scripts/BattleScene.gd" id="1"]
+
+[node name="BattleScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.06, 0.1, 0.18, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+
+[node name="Header" type="HBoxContainer" parent="VBox"]
+custom_minimum_size = Vector2(0, 50)
+
+[node name="LblAINexus" type="Label" parent="VBox/Header"]
+custom_minimum_size = Vector2(120, 0)
+text = "AI ❤ 20"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+
+[node name="LblAIMana" type="Label" parent="VBox/Header"]
+size_flags_horizontal = 3
+text = "AI 💧 1/1"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.4, 0.7, 1, 1)
+
+[node name="LblRound" type="Label" parent="VBox/Header"]
+size_flags_horizontal = 3
+text = "Round 1"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+
+[node name="LblPhase" type="Label" parent="VBox/Header"]
+size_flags_horizontal = 3
+text = "YOUR TURN"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.3, 1, 0.4, 1)
+
+[node name="LblPlayerManaHeader" type="Label" parent="VBox/Header"]
+size_flags_horizontal = 3
+text = ""
+
+[node name="LblPlayerNexus" type="Label" parent="VBox/Header"]
+custom_minimum_size = Vector2(120, 0)
+text = "❤ 20 Player"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
+
+[node name="HSep1" type="HSeparator" parent="VBox"]
+
+[node name="AIHandLabel" type="Label" parent="VBox"]
+text = "[ Tay bài AI (ẩn) ]"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+
+[node name="BoardArea" type="VBoxContainer" parent="VBox"]
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 300)
+
+[node name="AIBoardLabel" type="Label" parent="VBox/BoardArea"]
+text = "── AI Board ──"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+
+[node name="AIBoard" type="HBoxContainer" parent="VBox/BoardArea"]
+size_flags_horizontal = 3
+alignment = 1
+custom_minimum_size = Vector2(0, 120)
+
+[node name="DividerLabel" type="Label" parent="VBox/BoardArea"]
+text = "────────────────── combat zone ──────────────────"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.4, 0.4, 0.4, 1)
+
+[node name="PlayerBoard" type="HBoxContainer" parent="VBox/BoardArea"]
+size_flags_horizontal = 3
+alignment = 1
+custom_minimum_size = Vector2(0, 120)
+
+[node name="PlayerBoardLabel" type="Label" parent="VBox/BoardArea"]
+text = "── Your Board ──"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.5, 1, 0.5, 1)
+
+[node name="HSep2" type="HSeparator" parent="VBox"]
+
+[node name="LogBox" type="PanelContainer" parent="VBox"]
+custom_minimum_size = Vector2(0, 35)
+
+[node name="LblLog" type="Label" parent="VBox/LogBox"]
+text = "Game starting..."
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.9, 0.9, 0.6, 1)
+
+[node name="HSep3" type="HSeparator" parent="VBox"]
+
+[node name="HandLabel" type="Label" parent="VBox"]
+text = "── Your Hand ──"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.7, 0.9, 1, 1)
+
+[node name="HandScrollArea" type="ScrollContainer" parent="VBox"]
+custom_minimum_size = Vector2(0, 140)
+
+[node name="HandArea" type="HBoxContainer" parent="VBox/HandScrollArea"]
+size_flags_horizontal = 3
+
+[node name="Footer" type="HBoxContainer" parent="VBox"]
+custom_minimum_size = Vector2(0, 55)
+alignment = 1
+
+[node name="LblPlayerMana" type="Label" parent="VBox/Footer"]
+custom_minimum_size = Vector2(200, 0)
+text = "💧 1/1  ✨0"
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.4, 0.7, 1, 1)
+
+[node name="BtnAttack" type="Button" parent="VBox/Footer"]
+custom_minimum_size = Vector2(180, 45)
+text = "⚔ Declare Attack"
+theme_override_font_sizes/font_size = 14
+
+[node name="Spacer" type="Control" parent="VBox/Footer"]
+custom_minimum_size = Vector2(20, 0)
+
+[node name="BtnEndTurn" type="Button" parent="VBox/Footer"]
+custom_minimum_size = Vector2(160, 45)
+text = "⏩ End Turn / Pass"
+theme_override_font_sizes/font_size = 14
+
+[node name="PopupGameOver" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -150.0
+offset_right = 250.0
+offset_bottom = 150.0
+
+[node name="VBoxGO" type="VBoxContainer" parent="PopupGameOver"]
+alignment = 1
+
+[node name="LblResult" type="Label" parent="PopupGameOver/VBoxGO"]
+text = "Game Over"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="BtnRestart" type="Button" parent="PopupGameOver/VBoxGO"]
+text = "🔄 Chơi lại"
+theme_override_font_sizes/font_size = 16
+
+[node name="BtnMenu" type="Button" parent="PopupGameOver/VBoxGO"]
+text = "🏠 Menu"
+theme_override_font_sizes/font_size = 16
+
+[connection signal="pressed" from="PopupGameOver/VBoxGO/BtnRestart" to="." method="_on_btn_restart_pressed"]
+[connection signal="pressed" from="PopupGameOver/VBoxGO/BtnMenu" to="." method="_on_btn_menu_pressed"]

@@ -1,0 +1,38 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
+[application]
+
+config/name="Nexus Clash"
+config/description="A Legends of Runeterra-inspired card game. 1v1: Player vs AI"
+run/main_scene="res://scenes/MenuScene.tscn"
+config/features=PackedStringArray("4.6", "Forward Plus")
+config/icon="res://assets/icon.svg"
+
+[autoload]
+
+CardData="*res://scripts/CardData.gd"
+DeckManager="*res://scripts/DeckManager.gd"
+CombatManager="*res://scripts/CombatManager.gd"
+AIPlayer="*res://scripts/AIPlayer.gd"
+GameManager="*res://scripts/GameManager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[dotnet]
+
+project/assembly_name="Nexus Clash"
