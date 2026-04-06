@@ -332,7 +332,7 @@ func _make_hand_card(card: Dictionary, index: int, available_mana: int) -> Panel
 	if can_afford:
 		btn.pressed.connect(_on_hand_card_clicked.bind(index, card))
 	else:
-		btn.pressed.connect(func(): _on_log("⚠ Cần %d💧 mana (bạn có %d)" % [card.get("cost", 0), available_mana]))
+		btn.pressed.connect(func(): _on_log("! Cần %d💧 mana (bạn có %d)" % [card.get("cost", 0), available_mana]))
 	panel.add_child(btn)
 	
 	return panel
@@ -391,7 +391,7 @@ func _on_hand_card_clicked(index: int, card: Dictionary):
 			elif effect == "damage_damaged_enemy_unit":
 				var damaged = enemy_board.filter(func(u): return u.health < u.max_health)
 				if damaged.is_empty():
-					_on_log("⚠ Không có enemy unit nào đã bị damage!")
+					_on_log("! Không có enemy unit nào đã bị damage!")
 					selected_hand_index = -1
 				else:
 					selected_hand_index = index
@@ -403,7 +403,7 @@ func _on_hand_card_clicked(index: int, card: Dictionary):
 			# Buff spell: cần ally unit
 			elif effect in ["buff_ally_atk_2_this_round", "give_shield_to_ally", "buff_ally_1_atk_2_hp_permanent"]:
 				if ally_board.is_empty():
-					_on_log("⚠ Không có ally unit nào trên sân!")
+					_on_log("! Không có ally unit nào trên sân!")
 					selected_hand_index = -1
 				else:
 					selected_hand_index = index
@@ -433,12 +433,12 @@ func _on_unit_clicked(uid: int, pid: int):
 				if current_attacker_uid == uid:
 					# Click lại → deselect
 					current_attacker_uid = -1
-					_on_log("🛡 Bỏ chọn attacker. Click AI unit (board trên) để chọn unit muốn block.")
+					_on_log(" Bỏ chọn attacker. Click AI unit (board trên) để chọn unit muốn block.")
 				else:
 					current_attacker_uid = uid
 					var attacker_unit = state.get_unit_by_uid(uid)
 					var attacker_name = attacker_unit.unit_name if attacker_unit else "?"
-					_on_log("🛡 Đã chọn block: %s. Giờ click unit của bạn (board dưới) để block, hoặc click AI unit khác." % attacker_name)
+					_on_log(" Đã chọn block: %s. Giờ click unit của bạn (board dưới) để block, hoặc click AI unit khác." % attacker_name)
 				_refresh_ui(state)
 			else:
 				_on_log("⚠ Unit này không đang tấn công!")
@@ -448,16 +448,16 @@ func _on_unit_clicked(uid: int, pid: int):
 			var attacker_unit = state.get_unit_by_uid(current_attacker_uid)
 			if my_unit and not my_unit.exhausted:
 				block_assignments[current_attacker_uid] = uid
-				_on_log("✅ %s sẽ block %s! Click AI unit khác hoặc End Turn để hoàn tất." % [
+				_on_log(" %s sẽ block %s! Click AI unit khác hoặc End Turn để hoàn tất." % [
 					my_unit.unit_name,
 					attacker_unit.unit_name if attacker_unit else "?"
 				])
 				current_attacker_uid = -1
 				_refresh_ui(state)
 			else:
-				_on_log("⚠ Unit này không thể block (kiệt sức)!")
+				_on_log("! Unit này không thể block (kiệt sức)!")
 		elif pid == 0 and current_attacker_uid == -1:
-			_on_log("⚠ Chưa chọn AI unit cần block! Click AI unit (board trên) trước.")
+			_on_log("! Chưa chọn AI unit cần block! Click AI unit (board trên) trước.")
 		return
 	
 	# Target mode (spell)
@@ -479,9 +479,9 @@ func _on_unit_clicked(uid: int, pid: int):
 		else:
 			# Sai target type
 			if pending_spell_target_type == "ally":
-				_on_log("⚠ Spell này cần chọn unit của bạn (board dưới)!")
+				_on_log("! Spell này cần chọn unit của bạn (board dưới)!")
 			else:
-				_on_log("⚠ Spell này cần chọn enemy unit (board trên)!")
+				_on_log("! Spell này cần chọn enemy unit (board trên)!")
 		return
 	
 	# Attack select mode
@@ -489,7 +489,7 @@ func _on_unit_clicked(uid: int, pid: int):
 		var unit = state.get_unit_by_uid(uid)
 		if unit:
 			if unit.exhausted:
-				_on_log("⚠ %s đang kiệt sức (💤), không thể tấn công!" % unit.unit_name)
+				_on_log("! %s đang kiệt sức (💤), không thể tấn công!" % unit.unit_name)
 			else:
 				if uid in selected_attackers:
 					selected_attackers.erase(uid)
@@ -566,10 +566,10 @@ func _on_game_over(winner_id: int):
 	var result_text: String
 	var result_color: Color
 	if winner_id == 0:
-		result_text = "🎉 BẠN THẮNG! 🎉\nNexus địch đã bị phá hủy!"
+		result_text = " BẠN THẮNG! \nNexus địch đã bị phá hủy!"
 		result_color = Color(0.2, 1, 0.2)
 	else:
-		result_text = "💀 BẠN THUA! 💀\nNexus của bạn đã bị phá hủy!"
+		result_text = " BẠN THUA! \nNexus của bạn đã bị phá hủy!"
 		result_color = Color(1, 0.2, 0.2)
 	
 	# Hiện popup

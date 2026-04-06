@@ -7,7 +7,9 @@ extends Node
 # Singleton
 var state: GameState
 const AI_DIFFICULTY_NORMAL = 1  # AIPlayer.Difficulty.NORMAL
+const AI_DIFFICULTY_MCTS   = 2  # MCTSPlayer
 var ai_difficulty: int = AI_DIFFICULTY_NORMAL
+var mcts_ai: MCTSPlayer
 
 # Signal để UI cập nhật
 signal state_updated(state: GameState)
@@ -27,13 +29,17 @@ var waiting_for_player_attack: bool = false
 # ============================================================
 func _ready():
 	AIPlayer.difficulty = ai_difficulty
+	mcts_ai = MCTSPlayer.new()
 
 # ============================================================
 #   GAME SETUP
 # ============================================================
 func start_new_game(difficulty: int = 1):
 	ai_difficulty = difficulty
-	AIPlayer.difficulty = difficulty
+	if difficulty == AI_DIFFICULTY_MCTS:
+		mcts_ai = MCTSPlayer.new()
+	else:
+		AIPlayer.difficulty = difficulty
 	
 	state = GameState.new()
 	DeckManager.setup_game(state)
@@ -138,7 +144,7 @@ func player_declare_attack(attacker_uids: Array):
 	emit_signal("log_message", "Player declare attack với %d unit!" % attacker_uids.size())
 	
 	# AI chọn block
-	var block_map = AIPlayer.decide_blockers(state, attacker_uids)
+	var block_map = mcts_ai.decide_blockers(state, attacker_uids) if ai_difficulty == AI_DIFFICULTY_MCTS else AIPlayer.decide_blockers(state, attacker_uids)
 	await get_tree().create_timer(0.8).timeout
 	_resolve_combat_phase(block_map)
 
@@ -169,7 +175,7 @@ func _run_ai_turn():
 	if state.phase == GameState.Phase.GAME_OVER:
 		return
 	
-	var action = AIPlayer.decide_action(state)
+	var action = mcts_ai.decide_action(state) if ai_difficulty == AI_DIFFICULTY_MCTS else AIPlayer.decide_action(state)
 	
 	match action.get("type", "pass"):
 		"summon":

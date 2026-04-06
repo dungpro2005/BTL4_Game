@@ -1,0 +1,4 @@
+res://scenes/BattleScene.tscn
+res://scripts/MenuScene.gd
+res://scenes/MenuScene.tscn
+res://scripts/BattleScene.gd

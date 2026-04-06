@@ -26,6 +26,8 @@ func _ready():
 		difficulty_option.clear()
 		difficulty_option.add_item("Easy (Random AI)")
 		difficulty_option.add_item("Normal (Heuristic AI)")
+		difficulty_option.add_item("MCTS AI")
+
 		difficulty_option.selected = 1
 
 func _on_new_game():
