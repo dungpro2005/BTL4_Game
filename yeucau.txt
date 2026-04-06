@@ -1,0 +1,618 @@
+1) Tên game đề xuất
+Nexus Clash
+Thể loại:
+	• Card game / board-card hybrid
+	• Turn-based
+	• 1v1: Player vs NonePlayer (AI)
+Ý tưởng cốt lõi:
+	• Mỗi bên có một Nexus
+	• Mục tiêu là phá Nexus đối phương
+	• Có hệ thống mana, unit, spell, champion
+	• Có attack token luân phiên giữa 2 bên
+	• Có chiều sâu chiến thuật nhưng vẫn đủ gọn để làm đồ án
+
+2) Mục tiêu thiết kế
+Game cần đạt 4 tiêu chí:
+1. Nhìn ra chất “Runeterra-like”
+Có:
+	• Nexus
+	• đánh theo lượt
+	• unit trên sân
+	• spell
+	• champion
+	• attack token đổi qua từng round
+2. Dễ làm
+Không làm quá nhiều cơ chế như:
+	• stack phép phức tạp
+	• tốc độ phép Burst / Fast / Slow
+	• quá nhiều keyword
+	• hiệu ứng combo dây chuyền
+3. Dễ làm AI
+AI cần có thể:
+	• chọn lá để đánh
+	• chọn lúc summon
+	• chọn cách attack
+	• chọn block
+	• dùng heuristic hoặc minimax nông
+4. Dễ mở rộng
+Sau bản đầu có thể thêm:
+	• deck khác
+	• champion khác
+	• kỹ năng khác
+	• nhiều AI difficulty
+
+3) Tổng quan gameplay
+Mỗi bên có:
+	• Nexus HP: 20
+	• Deck: 20 lá
+	• Hand ban đầu: 4 lá
+	• Mana: tăng theo round từ 1 đến 10
+	• Spell Mana: tối đa 2
+	• Board limit: tối đa 5 unit trên sân
+Người chơi thắng khi:
+	• Nexus đối phương về 0
+
+4) 3 loại bài chính
+Game chỉ dùng đúng 3 loại bài để giữ dễ làm:
+1. Unit
+Lá triệu hồi đơn vị lên sân.
+Có thuộc tính:
+	• cost
+	• attack
+	• health
+	• keyword (nếu có)
+2. Spell
+Lá phép tác động tức thời.
+Chỉ nên có 3 nhóm:
+	• Damage spell
+	• Buff spell
+	• Defensive spell
+3. Champion
+Là unit đặc biệt.
+	• mạnh hơn unit thường
+	• có điều kiện level up
+	• level up xong sẽ mạnh hơn hoặc có nội tại mới
+
+5) Bàn chơi
+Bố cục rất đơn giản:
+	• Bên trái: thông tin Player
+	• Bên phải: thông tin AI
+	• Giữa màn hình:
+		◦ hàng unit Player
+		◦ hàng unit AI
+	• trên cùng hoặc dưới cùng:
+		◦ hand bài
+		◦ mana
+		◦ nút End Turn
+Mỗi bên:
+	• tối đa 5 unit trên sân
+	• unit đứng theo slot 0 → 4
+Không cần map ô vuông như board game cổ điển.
+Đây là kiểu board-card battle lane đơn giản.
+
+6) Cơ chế round và turn
+6.1 Bắt đầu game
+Mỗi bên:
+	• Nexus = 20 HP
+	• rút 4 lá
+	• mana round 1 = 1
+	• Player hoặc AI được attack token ngẫu nhiên hoặc Player luôn đi trước
+6.2 Mỗi round gồm:
+	1. tăng mana tối đa lên +1, tối đa 10
+	2. refill mana về mức tối đa
+	3. spell mana giữ lại tối đa 2
+	4. mỗi bên rút 1 lá
+	5. chuyển attack token sang bên còn lại
+6.3 Trong round, hai bên thay phiên action
+Mỗi action có thể là:
+	• summon 1 unit
+	• cast 1 spell
+	• declare attack nếu đang có attack token
+	• pass
+Round kết thúc khi:
+	• cả hai cùng pass liên tiếp
+
+7) Attack token
+Đây là phần giữ chất Runeterra rõ nhất.
+	• Mỗi round chỉ 1 bên có quyền chủ động tấn công
+	• Quyền này gọi là attack token
+	• Round sau token đổi sang bên kia
+Ví dụ:
+	• Round 1: Player có token
+	• Round 2: AI có token
+	• Round 3: Player có token
+Điều này giúp game:
+	• dễ cân bằng
+	• tạo nhịp chiến thuật
+	• AI cũng dễ quyết định hơn
+
+8) Cách summon và dùng spell
+Summon Unit
+	• Chỉ cần đủ mana
+	• Có chỗ trống trên board
+	• Unit mới vào sân ở trạng thái không được attack ngay trong lượt summon
+	• Có thể dùng từ round sau
+Spell
+Spell dùng ngay khi cast.
+Bản đầu nên làm spell theo kiểu:
+	• gây damage trực tiếp
+	• buff stat trong 1 turn hoặc vĩnh viễn
+	• hồi máu hoặc tạo shield
+Không nên làm stack phản ứng phức tạp ở version đầu.
+
+9) Combat
+9.1 Khi declare attack
+Bên có attack token chọn những unit nào sẽ đi tấn công.
+9.2 Defender chọn block
+Bên phòng thủ có thể:
+	• cho từng unit block một attacker
+	• hoặc không block để attacker đánh thẳng Nexus
+9.3 Gây damage
+Nếu attacker bị block:
+	• attacker gây damage vào blocker
+	• blocker gây damage lại attacker
+Nếu không bị block:
+	• damage đi thẳng vào Nexus
+9.4 Unit chết
+Nếu health <= 0 thì bị loại khỏi sân
+
+10) Keyword đề xuất
+Chỉ nên làm 4 keyword là đủ đẹp và dễ code.
+1. Guard
+Unit có Guard phải bị ưu tiên block / hoặc khi nó ở sân thì đối thủ nên xử lý nó trước.
+Bản đơn giản:
+	• Defender ưu tiên dùng Guard để block
+	• AI xem Guard là unit bảo kê
+2. Quick Strike
+Unit gây damage trước trong combat.
+Nếu unit địch chết ngay thì không phản đòn.
+3. Overwhelm
+Damage dư sau khi giết blocker sẽ xuyên vào Nexus.
+Ví dụ:
+	• attacker 5 ATK
+	• blocker còn 2 HP
+	• dư 3 damage vào Nexus
+4. Shield
+Chặn lần nhận damage đầu tiên.
+
+11) Champion system
+Champion là điểm nổi bật của game.
+Mỗi champion có:
+	• form thường
+	• điều kiện level up
+	• form leveled up
+Không nên làm animation level up quá nặng trong bản đầu.
+Chỉ cần:
+	• đổi viền
+	• đổi màu
+	• tăng chỉ số
+	• đổi nội tại
+
+12) Bộ bài 20 lá hoàn chỉnh
+Mỗi deck có 20 lá.
+Cấu trúc đề xuất:
+	• 10 Unit thường
+	• 6 Spell
+	• 4 Champion
+Tức là:
+	• game có đủ đa dạng
+	• nhưng deck vẫn nhỏ, AI dễ tính
+Dưới đây là bộ bài mẫu hoàn chỉnh.
+
+13) Danh sách 20 lá bài
+A. UNIT CARDS (10 lá)
+1. Vanguard Squire
+	• Type: Unit
+	• Cost: 1
+	• Attack: 1
+	• Health: 2
+	• Effect: none
+	• Vai trò: unit mở đầu
+2. Iron Recruit
+	• Type: Unit
+	• Cost: 2
+	• Attack: 2
+	• Health: 2
+	• Effect: none
+	• Vai trò: unit cơ bản
+3. Shield Bearer
+	• Type: Unit
+	• Cost: 2
+	• Attack: 1
+	• Health: 4
+	• Keyword: Guard
+	• Vai trò: tanker thủ nhà
+4. Swift Duelist
+	• Type: Unit
+	• Cost: 3
+	• Attack: 3
+	• Health: 2
+	• Keyword: Quick Strike
+	• Vai trò: combat lời
+5. War Hound
+	• Type: Unit
+	• Cost: 3
+	• Attack: 3
+	• Health: 3
+	• Effect: none
+	• Vai trò: mid-game ổn định
+6. Arc Archer
+	• Type: Unit
+	• Cost: 3
+	• Attack: 2
+	• Health: 3
+	• Effect: khi được summon, gây 1 damage lên 1 enemy unit
+	• Vai trò: dọn bàn nhỏ
+7. Stone Guardian
+	• Type: Unit
+	• Cost: 4
+	• Attack: 2
+	• Health: 5
+	• Keyword: Guard
+	• Vai trò: chặn late game
+8. Rampage Brute
+	• Type: Unit
+	• Cost: 4
+	• Attack: 5
+	• Health: 3
+	• Keyword: Overwhelm
+	• Vai trò: ép máu Nexus
+9. Battle Priest
+	• Type: Unit
+	• Cost: 4
+	• Attack: 2
+	• Health: 4
+	• Effect: khi summon, hồi 2 HP cho Nexus đồng minh
+	• Vai trò: hồi máu
+10. Skybreaker
+	• Type: Unit
+	• Cost: 5
+	• Attack: 4
+	• Health: 4
+	• Effect: khi attack, nhận +1 attack trong turn đó
+	• Vai trò: finisher vừa phải
+
+B. SPELL CARDS (6 lá)
+11. Fire Bolt
+	• Type: Spell
+	• Cost: 2
+	• Effect: gây 2 damage lên 1 target unit hoặc Nexus
+	• Vai trò: spell cơ bản
+12. Battle Cry
+	• Type: Spell
+	• Cost: 2
+	• Effect: 1 ally unit nhận +2 attack trong round này
+	• Vai trò: burst damage
+13. Barrier Sigil
+	• Type: Spell
+	• Cost: 2
+	• Effect: cho 1 ally unit keyword Shield
+	• Vai trò: cứu unit quan trọng
+14. Tactical Shot
+	• Type: Spell
+	• Cost: 3
+	• Effect: gây 3 damage lên 1 damaged enemy unit
+	• Vai trò: kết liễu
+15. Reinforce
+	• Type: Spell
+	• Cost: 3
+	• Effect: cho 1 ally unit +1/+2 vĩnh viễn
+	• Vai trò: snowball
+16. Nexus Surge
+	• Type: Spell
+	• Cost: 4
+	• Effect: hồi 3 HP cho Nexus hoặc gây 3 damage lên Nexus địch
+	• Vai trò: spell chiến lược
+
+C. CHAMPION CARDS (4 lá)
+Ta dùng 2 loại champion, mỗi loại 2 bản sao.
+17. Blade Master Kael
+	• Type: Champion
+	• Cost: 4
+	• Attack: 3
+	• Health: 4
+	• Keyword: Quick Strike
+	• Level up condition: bạn đã declare attack tổng cộng 2 lần
+	• Sau level up:
+		◦ Attack: 4
+		◦ Health: 5
+		◦ mỗi khi attack, nhận thêm +1 attack trong round đó
+	• Vai trò: champion công
+18. Blade Master Kael
+	• giống lá số 17
+19. Aegis Captain Lyra
+	• Type: Champion
+	• Cost: 5
+	• Attack: 3
+	• Health: 5
+	• Keyword: Guard
+	• Level up condition: bạn đã block hoặc chịu tổng cộng 5 damage lên unit
+	• Sau level up:
+		◦ Attack: 4
+		◦ Health: 6
+		◦ khi được summon hoặc level up, cho toàn bộ ally đang có Guard +1 health
+	• Vai trò: champion thủ
+20. Aegis Captain Lyra
+	• giống lá số 19
+
+14) Deck identity
+Deck này là kiểu:
+	• midrange
+	• vừa công vừa thủ
+	• dễ cho AI hiểu chiến lược
+Nó không quá combo nặng.
+AI dễ đánh giá:
+	• khi nào nên ép bàn
+	• khi nào nên thủ
+	• khi nào dùng spell
+
+15) Cost curve của deck
+Mana curve hợp lý:
+	• Cost 1: 1 lá
+	• Cost 2: 4 lá
+	• Cost 3: 5 lá
+	• Cost 4: 6 lá
+	• Cost 5: 4 lá
+Nhờ vậy:
+	• round đầu luôn có đồ chơi
+	• giữa game ổn định
+	• cuối game có lực ép Nexus
+
+16) Luật chi tiết đề xuất cho đồ án
+Rút bài
+	• đầu game: 4 lá
+	• mỗi round: rút 1 lá
+	• hand tối đa: 8 lá
+	• nếu rút quá 8 thì lá mới bị đốt
+Hết bài trong deck
+	• nếu deck rỗng mà cần rút: không thua ngay
+	• chỉ đơn giản là không rút được
+	• giúp game dễ làm hơn fatigue
+Board limit
+	• tối đa 5 unit mỗi bên
+Summon sickness
+	• unit mới summon không được attack ngay
+Spell Mana
+	• mana thường không dùng hết được chuyển tối đa 2 vào spell mana
+	• spell mana chỉ dùng cho spell
+Nếu bạn muốn đơn giản hơn nữa, có thể bỏ spell mana.
+Nhưng nếu muốn giống LoR hơn thì nên giữ.
+
+17) Flow một round mẫu
+Ví dụ round 4:
+	• Player và AI cùng refill lên 4 mana
+	• Player có attack token
+	• Player summon Swift Duelist
+	• AI cast Fire Bolt vào unit yếu
+	• Player summon Blade Master Kael
+	• AI pass
+	• Player declare attack với 2 unit
+	• AI chọn Shield Bearer block một attacker
+	• combat xảy ra
+	• cả hai pass → round kết thúc
+
+18) Thiết kế NonePlayer (AI)
+Đây là phần bạn cần nhất.
+AI nên có 4 tầng quyết định:
+18.1 Mulligan AI
+Khi bắt đầu game:
+	• bỏ bớt lá cost >= 5
+	• ưu tiên giữ lá cost 1, 2, 3
+	• giữ Guard nếu đi sau
+	• giữ champion cost 4 nếu tay bài ổn
+18.2 Main Action AI
+Khi đến lượt ra action, AI xét:
+Ưu tiên 1
+Nếu có lethal lên Nexus địch thì thực hiện ngay
+Ưu tiên 2
+Nếu có thể trade lời bằng spell hoặc unit thì làm
+Ưu tiên 3
+Nếu bàn yếu hơn đối phương, summon unit thủ
+Ưu tiên 4
+Nếu đang có lợi thế bàn, summon unit gây áp lực hoặc buff để ép damage
+Ưu tiên 5
+Nếu không có action tốt, pass
+18.3 Attack AI
+Khi có attack token, AI xét 3 khả năng:
+	• Full attack
+	• Attack một phần
+	• Không attack
+AI chấm điểm từng phương án:
+	• damage vào Nexus
+	• unit nào có thể chết
+	• có trade lời không
+	• champion có an toàn không
+18.4 Block AI
+Khi bị tấn công, AI ưu tiên:
+	1. ngăn lethal
+	2. bảo vệ Nexus
+	3. giữ champion sống
+	4. block theo hướng trade có lời
+	5. nếu block xong chết vô ích thì cân nhắc bỏ
+
+19) Hàm heuristic cho AI
+Bạn có thể chấm điểm state như sau:
+score =
+(aiNexusHP - playerNexusHP) * 50
++ (aiBoardAttack - playerBoardAttack) * 8
++ (aiBoardHealth - playerBoardHealth) * 6
++ (aiHandSize - playerHandSize) * 4
++ (aiMana + aiSpellMana) * 2
++ (leveledChampionCountAI - leveledChampionCountPlayer) * 20
++ (guardUnitCountAI - guardUnitCountPlayer) * 5
+Nếu AI là phe maximize thì:
+	• score càng cao càng tốt
+
+20) Cách sinh hành động cho AI
+Trong mỗi state, AI sinh ra danh sách action hợp lệ:
+Action type
+	• PlayUnit(cardIndex)
+	• PlaySpell(cardIndex, target)
+	• DeclareAttack(mask attackers)
+	• Pass
+Khi block
+	• GenerateBlockAssignments()
+Để tránh nổ số lượng trạng thái, giới hạn:
+	• chỉ xét top 8 hành động tốt nhất
+	• attack mask chỉ xét các tổ hợp hợp lý
+	• block assignment có heuristic lọc trước
+
+21) AI difficulty levels
+Bạn có thể làm 3 mức:
+Easy
+	• chọn action gần như random nhưng có ưu tiên basic
+Normal
+	• heuristic rule-based
+Hard
+	• heuristic + lookahead depth 2
+Như vậy đồ án nhìn chuyên nghiệp hơn.
+
+22) Kiến trúc code đề xuất
+Nếu làm bằng C++/SDL2, chia thành các phần:
+Card
+enum CardType { UNIT, SPELL, CHAMPION };
+enum Keyword { NONE, GUARD, QUICK_STRIKE, OVERWHELM, SHIELD };
+
+struct Card {
+	int id;
+	std::string name;
+	CardType type;
+	int cost;
+	int attack;
+	int health;
+	Keyword keyword;
+	int spellValue;
+};
+Unit on board
+struct UnitInstance {
+	int uid;
+	int owner; // 0 player, 1 AI
+	int cardId;
+	int attack;
+	int health;
+	int maxHealth;
+	bool exhausted;
+	bool leveledUp;
+	bool hasShield;
+	bool isChampion;
+};
+Player state
+struct PlayerState {
+	int nexusHP;
+	int mana;
+	int maxMana;
+	int spellMana;
+	std::vector<int> deck;
+	std::vector<int> hand;
+	std::vector<UnitInstance> board;
+};
+Game state
+struct GameState {
+	PlayerState players[2];
+	int round;
+	int priorityPlayer;
+	int attackTokenOwner;
+	int consecutivePasses;
+	int attackCount[2];
+	int blockedDamageCount[2];
+};
+
+23) Các màn hình game
+Bạn nên có 5 màn:
+Menu
+	• New Game
+	• Tutorial
+	• About
+	• Exit
+Mulligan
+	• chọn đổi bài đầu game
+Main Battle
+	• sân đấu chính
+Victory / Defeat
+	• hiện kết quả
+About
+	• giới thiệu game và luật ngắn
+
+24) Trình tự làm game
+Làm theo thứ tự này:
+Giai đoạn 1
+	• tạo data card
+	• rút bài
+	• mana
+	• summon unit
+	• attack token
+	• combat cơ bản
+Giai đoạn 2
+	• block
+	• spell
+	• unit chết
+	• Nexus damage
+Giai đoạn 3
+	• champion
+	• level up
+	• keyword
+Giai đoạn 4
+	• AI
+	• menu
+	• polish giao diện
+
+25) Cái gì nên bỏ trong bản đầu
+Để chắc chắn làm xong, đừng thêm:
+	• stack spell phản ứng
+	• trap card
+	• summon quá nhiều token
+	• aura phức tạp
+	• random effect
+	• draw quá nhiều lá
+	• deck building tự do
+Hãy đóng cứng 1 deck mẫu trước.
+
+26) Bản MVP tối ưu nhất
+Nếu cần bản nộp chắc ăn, MVP nên là:
+	• 20 lá cố định
+	• 3 loại bài
+	• 2 champion
+	• 4 keyword
+	• 5 slot unit mỗi bên
+	• attack token đổi qua round
+	• AI rule-based
+	• không có animation phức tạp
+Là đủ đẹp và đủ chiều sâu.
+
+27) Điểm mạnh khi thuyết trình
+Bạn có thể mô tả game như sau:
+Nexus Clash là một game thẻ bài chiến thuật theo lượt lấy cảm hứng từ Legends of Runeterra, trong đó hai người chơi sử dụng bộ bài 20 lá gồm Unit, Spell và Champion để triệu hồi quân, dùng phép và tổ chức tấn công nhằm phá hủy Nexus đối phương. Trò chơi sử dụng cơ chế attack token luân phiên, mana tăng theo round, champion có thể level up và AI NonePlayer được xây dựng bằng heuristic đánh giá trạng thái cùng hệ thống sinh nước đi hợp lệ.
+
+28) Gợi ý mở rộng sau này
+Sau khi hoàn thành bản chính, bạn có thể mở rộng:
+	• deck thứ 2
+	• champion mới
+	• keyword Lifesteal
+	• spell AoE
+	• chế độ PvP local
+	• AI hard bằng minimax depth 2–3
+
+29) Chốt thiết kế cuối cùng
+Tôi khuyên bạn chốt bộ này:
+Tên
+Nexus Clash
+Luật cốt lõi
+	• 20 Nexus HP
+	• 20 lá bài
+	• Unit / Spell / Champion
+	• 5 unit tối đa trên sân
+	• mana tăng mỗi round
+	• spell mana tối đa 2
+	• attack token đổi qua từng round
+Champion
+	• Blade Master Kael
+	• Aegis Captain Lyra
+AI
+	• rule-based + heuristic
+Ưu điểm
+	• giống tinh thần Runeterra
+	• đồ án vừa sức
+	• dễ code
+	• dễ trình bày
+Nếu bạn muốn, bước tiếp theo tôi có thể làm ngay cho bạn một trong 3 thứ:
+bộ class C++ chi tiết, flowchart AI NonePlayer, hoặc file dữ liệu 20 lá bài dạng JSON/C++ struct để nhét thẳng vào project.
