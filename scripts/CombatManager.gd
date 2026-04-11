@@ -10,17 +10,11 @@ func resolve_one_combat(attacker: UnitInstance, blocker: UnitInstance) -> Dictio
 	var overflow = 0
 	var atk_dmg = attacker.get_effective_attack()
 	var blk_dmg = blocker.get_effective_attack()
-	var blk_hp_before = blocker.health
-	var atk_hp_before = attacker.health
+	var blk_hp_before = blocker.health   # lưu HP trước combat để tính overflow
 	
 	var atk_qs = (attacker.keyword == CardData.Keyword.QUICK_STRIKE)
 	var blk_qs = (blocker.keyword == CardData.Keyword.QUICK_STRIKE)
 	
-	if attacker.keyword == CardData.Keyword.QUICK_STRIKE and blocker.keyword == CardData.Keyword.QUICK_STRIKE:
-		# Đặc biệt: cả hai đều có QS thì đánh nhau cùng lúc
-		# logic xử lý ở else chung dưới đây
-		pass
-		
 	if atk_qs and not blk_qs:
 		# Attacker có Quick Strike → đánh trước
 		blocker.take_damage(atk_dmg)
@@ -28,11 +22,7 @@ func resolve_one_combat(attacker: UnitInstance, blocker: UnitInstance) -> Dictio
 			# Blocker chết ngay → attacker không nhận phản đòn
 			if attacker.keyword == CardData.Keyword.OVERWHELM:
 				overflow = max(0, atk_dmg - blk_hp_before)
-			return {
-				"attacker_alive": true, "blocker_alive": false, "overflow": overflow,
-				"atk_hp_before": atk_hp_before, "blk_hp_before": blk_hp_before,
-				"qs_kill": true
-			}
+			return {"attacker_alive": true, "blocker_alive": false, "overflow": overflow}
 		# Blocker sống sót → phản đòn
 		attacker.take_damage(blk_dmg)
 		
@@ -41,11 +31,7 @@ func resolve_one_combat(attacker: UnitInstance, blocker: UnitInstance) -> Dictio
 		attacker.take_damage(blk_dmg)
 		if not attacker.is_alive():
 			# Attacker chết từ Quick Strike blocker → không có overflow
-			return {
-				"attacker_alive": false, "blocker_alive": true, "overflow": 0,
-				"atk_hp_before": atk_hp_before, "blk_hp_before": blk_hp_before,
-				"qs_kill": true
-			}
+			return {"attacker_alive": false, "blocker_alive": true, "overflow": 0}
 		# Attacker sống sót → phản đòn
 		blocker.take_damage(atk_dmg)
 		if attacker.keyword == CardData.Keyword.OVERWHELM and not blocker.is_alive():
@@ -61,10 +47,7 @@ func resolve_one_combat(attacker: UnitInstance, blocker: UnitInstance) -> Dictio
 	return {
 		"attacker_alive": attacker.is_alive(),
 		"blocker_alive": blocker.is_alive(),
-		"overflow": overflow,
-		"atk_hp_before": atk_hp_before,
-		"blk_hp_before": blk_hp_before,
-		"both_qs": (atk_qs and blk_qs)
+		"overflow": overflow
 	}
 
 # Giải quyết toàn bộ combat sau khi blockers đã được assign
@@ -85,12 +68,10 @@ func resolve_combat(state: GameState, attacker_pid: int, attackers: Array, block
 		# Skybreaker effect: +1 atk khi attack
 		if attacker.card_id == 10:
 			attacker.temp_atk_bonus += 1
-			log_str += "[%s +1⚔ bonus] " % attacker.unit_name
 		
 		# Kael leveled up effect: +1 atk khi attack
 		if attacker.is_champion and attacker.leveled_up and attacker.card_id in [17, 18]:
 			attacker.temp_atk_bonus += 1
-			log_str += "[%s ★ +1⚔ bonus] " % attacker.unit_name
 		
 		# Đếm attack cho Kael champion level up
 		state.get_player(attacker_pid).attack_declares += 1
@@ -101,23 +82,10 @@ func resolve_combat(state: GameState, attacker_pid: int, attackers: Array, block
 			if blocker != null and blocker.is_alive():
 				var result = resolve_one_combat(attacker, blocker)
 				
-				# Log kết quả chi tiết HP
-				var atk_hp_info = "%d->%d" % [result.get("atk_hp_before", 0), attacker.health]
-				var blk_hp_info = "%d->%d" % [result.get("blk_hp_before", 0), blocker.health]
-				
+				# Log kết quả
 				var atk_status = "✖" if not result["attacker_alive"] else "✓"
 				var blk_status = "✖" if not result["blocker_alive"] else "✓"
-				
-				if result.get("qs_kill", false):
-					log_str += "⚡QS: "
-				elif result.get("both_qs", false):
-					log_str += "⚔QS vs QS: "
-				
-				log_str += "%s[%s] vs %s[%s] (HP: %s vs %s)" % [
-					attacker.unit_name, atk_status, 
-					blocker.unit_name, blk_status,
-					atk_hp_info, blk_hp_info
-				]
+				log_str += "%s[%s] vs %s[%s]" % [attacker.unit_name, atk_status, blocker.unit_name, blk_status]
 				
 				# Overflow vào Nexus (chỉ hiện khi > 0)
 				if result["overflow"] > 0:
@@ -125,10 +93,7 @@ func resolve_combat(state: GameState, attacker_pid: int, attackers: Array, block
 					log_str += " → 💥Overflow %d→Nexus" % result["overflow"]
 				log_str += "\n"
 				
-				# total_block_damage cho Lyra: chỉ cộng damage nhận trong combat này
-				var actual_dmg_to_blocker = result.get("blk_hp_before", 0) - blocker.health
-				if actual_dmg_to_blocker > 0:
-					state.get_player(defender_pid).total_block_damage += actual_dmg_to_blocker
+				state.get_player(defender_pid).total_block_damage += blocker.damage_taken_total
 			else:
 				# Blocker đã chết rồi → đánh thẳng Nexus
 				var dmg = attacker.get_effective_attack()

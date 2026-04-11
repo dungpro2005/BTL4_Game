@@ -24,8 +24,10 @@ func _ready():
 	# Difficulty dropdown
 	if difficulty_option:
 		difficulty_option.clear()
-		difficulty_option.add_item("Easy (Random AI)")
-		difficulty_option.add_item("Normal (Heuristic AI)")
+		difficulty_option.add_item("Random AI")
+		difficulty_option.add_item("Heuristic AI")
+		difficulty_option.add_item("Minimax AI")
+		difficulty_option.add_item("Monte-Carlo Tree Search AI")
 		difficulty_option.selected = 1
 
 func _on_new_game():

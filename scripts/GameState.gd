@@ -16,14 +16,27 @@ class PlayerState:
 	var mana: int = 0
 	var max_mana: int = 0
 	var spell_mana: int = 0
-	var deck: Array = []        # Array of card_id (int)
-	var hand: Array = []        # Array of card_id (int)
-	var board: Array = []       # Array of UnitInstance
+	var deck: Array = []
+	var hand: Array = []
+	var board: Array = []
 	
-	# Thống kê champion level up
-	var attack_declares: int = 0     # Kael level up condition
-	var total_block_damage: int = 0  # Lyra level up condition
+	var attack_declares: int = 0
+	var total_block_damage: int = 0
 
+	func clone_state() -> PlayerState:
+		var p = PlayerState.new()
+		p.nexus_hp = nexus_hp
+		p.mana = mana
+		p.max_mana = max_mana
+		p.spell_mana = spell_mana
+		p.deck = deck.duplicate()
+		p.hand = hand.duplicate()
+		p.attack_declares = attack_declares
+		p.total_block_damage = total_block_damage
+		p.board = []
+		for u in board:
+			p.board.append(u.clone_instance())
+		return p
 # ----------- Game State -----------
 var players: Array = []  # [PlayerState x2]  0=Player, 1=AI
 var round_num: int = 0
@@ -109,20 +122,21 @@ func start_new_round():
 	round_num += 1
 	for pid in range(2):
 		var p = get_player(pid)
-		# Tăng max mana
 		p.max_mana = min(p.max_mana + 1, MAX_MANA)
-		# Refill mana, lưu dư vào spell mana
-		var leftover = p.mana  # mana còn lại từ round trước
+		var leftover = p.mana
 		p.spell_mana = min(p.spell_mana + leftover, MAX_SPELL_MANA)
 		p.mana = p.max_mana
-		# Reset temp buff của unit
 		for u in p.board:
 			u.reset_temp_buffs()
 			u.exhausted = false
-	# Đổi attack token
 	if round_num > 1:
 		attack_token_owner = opponent(attack_token_owner)
 	consecutive_passes = 0
+
+func begin_sim_round():
+	start_new_round()
+	for pid in range(2):
+		draw_card(pid)
 
 # ---- Hand / Deck ----
 func draw_card(pid: int) -> bool:
@@ -166,3 +180,22 @@ func debug_state() -> String:
 			s += str(u) + " | "
 		s += "\n"
 	return s
+func clone_state() -> GameState:
+	var s = GameState.new()
+	s.players = [players[0].clone_state(), players[1].clone_state()]
+	s.round_num = round_num
+	s.priority_player = priority_player
+	s.attack_token_owner = attack_token_owner
+	s.consecutive_passes = consecutive_passes
+	s.uid_counter = uid_counter
+	s.attackers = attackers.duplicate()
+	s.block_assignments = block_assignments.duplicate()
+	s.in_combat = in_combat
+	s.phase = phase
+	s.winner = winner
+	return s
+	
+	
+	
+
+	

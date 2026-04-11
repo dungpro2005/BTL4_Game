@@ -87,3 +87,21 @@ func _to_string() -> String:
 	var ex_str = " (exhausted)" if exhausted else ""
 	var lv_str = " ★" if leveled_up else ""
 	return "%s %d/%d%s%s%s" % [unit_name + lv_str, attack + temp_atk_bonus, health, kw_str, ex_str, " 🛡" if has_shield else ""]
+func clone_instance() -> UnitInstance:
+	var u = UnitInstance.new()
+	u.uid = uid
+	u.owner_id = owner_id
+	u.card_id = card_id
+	u.unit_name = unit_name
+	u.attack = attack
+	u.health = health
+	u.max_health = max_health
+	u.keyword = keyword
+	u.exhausted = exhausted
+	u.has_shield = has_shield
+	u.is_champion = is_champion
+	u.leveled_up = leveled_up
+	u.temp_atk_bonus = temp_atk_bonus
+	u.attack_count = attack_count
+	u.damage_taken_total = damage_taken_total
+	return u

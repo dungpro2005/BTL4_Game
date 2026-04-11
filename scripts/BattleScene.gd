@@ -7,9 +7,7 @@ extends Control
 # ── Node refs (sẽ được gán trong .tscn) ──────────────────────
 @onready var lbl_round      = $VBox/Header/LblRound
 @onready var lbl_phase      = $VBox/Header/LblPhase
-@onready var lbl_ai_nexus   = $VBox/Header/LblAINexus
-@onready var lbl_player_nexus = $VBox/Header/LblPlayerNexus
-@onready var lbl_ai_mana    = $VBox/Header/LblAIMana
+@onready var lbl_ai_info    = $VBox/Header/LblAIInfo
 @onready var lbl_player_mana = $VBox/Footer/LblPlayerMana
 @onready var lbl_log        = $VBox/LogBox/LblLog
 @onready var ai_board_hbox  = $VBox/BoardArea/AIBoard
@@ -19,6 +17,12 @@ extends Control
 @onready var btn_attack     = $VBox/Footer/BtnAttack
 @onready var popup_gameover = $PopupGameOver
 @onready var lbl_gameover   = $PopupGameOver/VBoxGO/LblResult
+@onready var popup_game_over: PanelContainer = $PopupGameOver
+@onready var rules_panel: Panel = $RulesPanel
+@onready var footer: HBoxContainer = $VBox/Footer
+@onready var btn_rules: Button = $VBox/Footer/BtnRules
+
+var popup_pause: PanelContainer  # tạo bằng code trong _ready()
 
 # ── Internal state ────────────────────────────────────────────
 var selected_hand_index: int = -1
@@ -54,15 +58,79 @@ func _ready():
 	btn_end_turn.pressed.connect(_on_end_turn_pressed)
 	btn_attack.pressed.connect(_on_attack_pressed)
 	
-	# Kết nối nút Game Over
-	if $PopupGameOver/VBoxGO/BtnMenu:
-		$PopupGameOver/VBoxGO/BtnMenu.pressed.connect(_on_btn_menu_pressed)
-	if $PopupGameOver/VBoxGO/BtnRestart:
-		$PopupGameOver/VBoxGO/BtnRestart.pressed.connect(_on_btn_restart_pressed)
-	
 	popup_gameover.hide()
 	await get_tree().process_frame
-	gm.start_new_game()
+	gm.start_new_game(gm.ai_difficulty)
+	_build_pause_popup()
+
+# ── Pause ────────────────────────────────────────────────────
+func _input(event: InputEvent):
+	if event.is_action_pressed("ui_cancel"):   # ESC
+		if popup_gameover and popup_gameover.visible:
+			return   # Không pause khi game over đang hiện
+		_toggle_pause()
+
+func _toggle_pause():
+	var paused = not get_tree().paused
+	get_tree().paused = paused
+	popup_pause.visible = paused
+
+func _build_pause_popup():
+	# Tạo popup pause hoàn toàn bằng code — không cần thêm node vào .tscn
+	popup_pause = PanelContainer.new()
+	popup_pause.set_anchors_preset(Control.PRESET_CENTER)
+	popup_pause.offset_left   = -160.0
+	popup_pause.offset_top    = -120.0
+	popup_pause.offset_right  =  160.0
+	popup_pause.offset_bottom =  120.0
+	popup_pause.process_mode  = Node.PROCESS_MODE_ALWAYS   # hoạt động khi game paused
+	popup_pause.visible       = false
+	add_child(popup_pause)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 16)
+	popup_pause.add_child(vbox)
+
+	var lbl = Label.new()
+	lbl.text = " GAME PAUSED "
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_color_override("font_color", Color(1, 0.9, 0.2))
+	vbox.add_child(lbl)
+
+	var btn_continue = Button.new()
+	btn_continue.text = "  Continue  "
+	btn_continue.custom_minimum_size = Vector2(200, 44)
+	btn_continue.add_theme_font_size_override("font_size", 16)
+	btn_continue.process_mode = Node.PROCESS_MODE_ALWAYS
+	btn_continue.pressed.connect(_on_pause_continue)
+	vbox.add_child(btn_continue)
+
+	var btn_exit = Button.new()
+	btn_exit.text = "  Exit to Menu  "
+	btn_exit.custom_minimum_size = Vector2(200, 44)
+	btn_exit.add_theme_font_size_override("font_size", 16)
+	btn_exit.process_mode = Node.PROCESS_MODE_ALWAYS
+	btn_exit.pressed.connect(_on_pause_exit)
+	vbox.add_child(btn_exit)
+
+func _on_pause_continue():
+	get_tree().paused = false
+	popup_pause.visible = false
+
+func _on_pause_exit():
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/MenuScene.tscn")
+
+# ── Helpers ──────────────────────────────────────────────────
+func _get_ai_label() -> String:
+	match gm.ai_difficulty:
+		0: return "Random"
+		1: return "Heuristic"
+		2: return "Minimax"
+		3: return "MCTS"
+	return "AI"
 
 # ── State Update ─────────────────────────────────────────────
 func _on_state_updated(state: GameState):
@@ -76,10 +144,9 @@ func _refresh_ui(state: GameState):
 	lbl_round.text = "Round %d" % gm_state.round_num
 	var p0 = gm_state.get_player(0)
 	var p1 = gm_state.get_player(1)
-	lbl_player_nexus.text = "❤ %d" % p0.nexus_hp
-	lbl_ai_nexus.text    = "❤ %d" % p1.nexus_hp
-	lbl_player_mana.text = "💧 %d/%d  ✨%d" % [p0.mana, p0.max_mana, p0.spell_mana]
-	lbl_ai_mana.text     = "AI 💧 %d/%d" % [p1.mana, p1.max_mana]
+	var ai_label := _get_ai_label()
+	lbl_ai_info.text  = "❤ %d  💧 %d/%d  AI: %s" % [p1.nexus_hp, p1.mana, p1.max_mana, ai_label]
+	lbl_player_mana.text = "❤ %d  💧 %d/%d  ✨ %d" % [p0.nexus_hp, p0.mana, p0.max_mana, p0.spell_mana]
 	
 	# Phase / turn indicator
 	var phase_text := ""
@@ -146,7 +213,7 @@ func _refresh_ui(state: GameState):
 		btn_attack.disabled = false   # Confirm Attack luôn bật
 	else:
 		btn_attack.disabled = (not is_player_turn) or (gm_state.attack_token_owner != 0)
-	btn_attack.text = "⚔ Declare Attack" if not attack_selecting else "✔ Confirm Attack"
+	btn_attack.text = "Declare Attack" if not attack_selecting else "✔ Confirm Attack"
 	
 	# Highlight End Turn khi block mode hoặc không có gì làm
 	if block_mode or stuck_in_attack or (is_player_turn and not attack_selecting and not block_mode and not has_ready_attackers):
@@ -193,12 +260,7 @@ func _make_unit_card(unit: UnitInstance, pid: int) -> Panel:
 	panel.custom_minimum_size = Vector2(100, 110)
 	
 	# Style background
-	var is_attacker = (unit.uid in gm.state.attackers) 
-	var is_blocker = (unit.uid in gm.state.block_assignments.values())
-	# Thêm: kiểm tra xem unit này có đang được player chọn để block trong BattleScene không
-	var is_pending_blocker = (unit.uid in block_assignments.values())
-	var current_phase = gm.state.phase
-	
+	var is_attacker = (unit.uid in gm.state.attackers) and (gm.state.phase == GameState.Phase.COMBAT_BLOCK)
 	var style = StyleBoxFlat.new()
 	if unit.exhausted and not is_attacker:
 		style.bg_color = Color(0.25, 0.25, 0.25, 0.9)
@@ -207,7 +269,7 @@ func _make_unit_card(unit: UnitInstance, pid: int) -> Panel:
 	else:
 		style.bg_color = Color(0.5, 0.1, 0.1, 0.9)
 	
-	if is_attacker and (current_phase == GameState.Phase.COMBAT_BLOCK or current_phase == GameState.Phase.COMBAT_RESOLVE):
+	if is_attacker:
 		if unit.uid == current_attacker_uid:
 			# Unit này đang được chọn để block → viền vàng sáng
 			style.bg_color = Color(0.5, 0.25, 0.0, 0.95)
@@ -218,13 +280,6 @@ func _make_unit_card(unit: UnitInstance, pid: int) -> Panel:
 			style.bg_color = Color(0.5, 0.15, 0.0, 0.9)
 			style.border_color = Color(1, 0.5, 0.1, 1)
 			style.set_border_width_all(3)
-	elif (is_blocker or is_pending_blocker) and (current_phase == GameState.Phase.COMBAT_BLOCK or current_phase == GameState.Phase.COMBAT_RESOLVE):
-		# Hiển thị viền xanh dương cho quân đang block (hoặc sắp block)
-		style.border_color = Color(0.2, 0.6, 1.0, 1.0)
-		if is_pending_blocker:
-			# Viền nhạt hơn cho pending block
-			style.border_color = Color(0.4, 0.8, 1.0, 0.8)
-		style.set_border_width_all(4)
 	elif unit.is_champion:
 		style.border_color = Color(1, 0.8, 0.2)
 		style.set_border_width_all(2)
@@ -241,21 +296,21 @@ func _make_unit_card(unit: UnitInstance, pid: int) -> Panel:
 	panel.add_child(vbox)
 	
 	var name_lbl = Label.new()
-	name_lbl.text = ("★ " if unit.leveled_up else "") + unit.unit_name
+	name_lbl.text = ("★" if unit.leveled_up else "") + unit.unit_name
 	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_lbl.add_theme_font_size_override("font_size", 11)
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
 	vbox.add_child(name_lbl)
 	
 	var stat_lbl = Label.new()
-	stat_lbl.text = "⚔%d / ❤%d" % [unit.get_effective_attack(), unit.health]
+	stat_lbl.text = "%d / %d" % [unit.get_effective_attack(), unit.health]
 	stat_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stat_lbl.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(stat_lbl)
 	
 	var kw_lbl = Label.new()
 	var kw = CardData.keyword_name(unit.keyword)
-	kw_lbl.text = kw + (" 🛡" if unit.has_shield else "")
+	kw_lbl.text = kw + ("🛡" if unit.has_shield else "")
 	kw_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	kw_lbl.add_theme_font_size_override("font_size", 10)
 	vbox.add_child(kw_lbl)
@@ -337,7 +392,7 @@ func _make_hand_card(card: Dictionary, index: int, available_mana: int) -> Panel
 	# Bài không đủ mana hiện icon khoá
 	if not can_afford:
 		var lock_lbl = Label.new()
-		lock_lbl.text = "🔒 %d💧" % card.get("cost", 0)
+		lock_lbl.text = "🔒 %d 💧" % card.get("cost", 0)
 		lock_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lock_lbl.add_theme_color_override("font_color", Color(1, 0.4, 0.4))
 		vbox.add_child(lock_lbl)
@@ -464,14 +519,7 @@ func _on_unit_clicked(uid: int, pid: int):
 			# Click vào unit mình → assign blocker
 			var my_unit = state.get_unit_by_uid(uid)
 			var attacker_unit = state.get_unit_by_uid(current_attacker_uid)
-			
-			# Kiểm tra xem unit của mình đã đang block unit khác chưa 
-			# (Trong rule chuẩn: 1 unit chỉ block được 1 attacker)
-			for atk_id in block_assignments.keys():
-				if block_assignments[atk_id] == uid:
-					block_assignments.erase(atk_id) # Bỏ block cũ
-			
-			if my_unit: # Bỏ check exhausted để cho phép block
+			if my_unit and not my_unit.exhausted:
 				block_assignments[current_attacker_uid] = uid
 				_on_log("✅ %s sẽ block %s! Click AI unit khác hoặc End Turn để hoàn tất." % [
 					my_unit.unit_name,
@@ -479,6 +527,8 @@ func _on_unit_clicked(uid: int, pid: int):
 				])
 				current_attacker_uid = -1
 				_refresh_ui(state)
+			else:
+				_on_log("⚠ Unit này không thể block (kiệt sức)!")
 		elif pid == 0 and current_attacker_uid == -1:
 			_on_log("⚠ Chưa chọn AI unit cần block! Click AI unit (board trên) trước.")
 		return
@@ -545,11 +595,8 @@ func _on_end_turn_pressed():
 	selected_attackers = []
 	
 	if block_mode:
-		# Submit blocks (có thể rỗng hoặc đã điền một phần)
-		if block_assignments.is_empty():
-			_on_log("Bỏ qua blocking!")
-		else:
-			_on_log("Xác nhận chặn đòn!")
+		# Submit blocks (có thể rỗng họac đã điền một phần)
+		_on_log("Bỏ qua blocking!")
 		block_mode = false
 		gm.player_submit_blocks(block_assignments)
 		block_assignments = {}
@@ -592,28 +639,22 @@ func _on_game_over(winner_id: int):
 	var result_text: String
 	var result_color: Color
 	if winner_id == 0:
-		result_text = "🎉 BẠN THẮNG! 🎉\nNexus địch đã bị phá hủy!"
+		result_text = " BẠN THẮNG! \nNexus địch đã bị phá hủy!"
 		result_color = Color(0.2, 1, 0.2)
 	else:
-		result_text = "💀 BẠN THUA! 💀\nNexus của bạn đã bị phá hủy!"
+		result_text = " BẠN THUA! \nNexus của bạn đã bị phá hủy!"
 		result_color = Color(1, 0.2, 0.2)
 	
 	# Hiện popup
 	if popup_gameover:
-		popup_gameover.show() # Dùng show() thay vì visible = true cho chắc chắn
+		popup_gameover.visible = true
 		if lbl_gameover:
 			lbl_gameover.text = result_text
 			lbl_gameover.add_theme_color_override("font_color", result_color)
 		else:
 			print("[BattleScene] ERROR: lbl_gameover is null!")
-		
-		# Đưa lên trên cùng
-		popup_gameover.z_index = 10
 	else:
 		print("[BattleScene] ERROR: popup_gameover is null!")
-	
-	# Cập nhật UI lần cuối để thấy Nexus HP = 0
-	_refresh_ui(gm.state)
 	
 	# Log fallback luôn hiện
 	_on_log(result_text.replace("\n", " | "))
@@ -624,3 +665,15 @@ func _on_btn_menu_pressed():
 
 func _on_btn_restart_pressed():
 	get_tree().reload_current_scene()
+
+func _getready():
+	btn_rules.visible = true
+	rules_panel.visible = false
+
+func _on_btn_rules_pressed():
+	btn_rules.visible = false
+	rules_panel.visible = true
+
+
+func _on_back_button_pressed() -> void:
+	_getready()

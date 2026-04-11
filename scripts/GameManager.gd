@@ -7,7 +7,9 @@ extends Node
 # Singleton
 var state: GameState
 const AI_DIFFICULTY_NORMAL = 1  # AIPlayer.Difficulty.NORMAL
+const AI_DIFFICULTY_MCTS   = 3  # MCTSPlayer (index 3 khớp với MenuScene dropdown)
 var ai_difficulty: int = AI_DIFFICULTY_NORMAL
+var mcts_ai: MCTSPlayer
 
 # Signal để UI cập nhật
 signal state_updated(state: GameState)
@@ -27,13 +29,17 @@ var waiting_for_player_attack: bool = false
 # ============================================================
 func _ready():
 	AIPlayer.difficulty = ai_difficulty
+	mcts_ai = MCTSPlayer.new()
 
 # ============================================================
 #   GAME SETUP
 # ============================================================
 func start_new_game(difficulty: int = 1):
 	ai_difficulty = difficulty
-	AIPlayer.difficulty = difficulty
+	if difficulty == AI_DIFFICULTY_MCTS:
+		mcts_ai = MCTSPlayer.new()
+	else:
+		AIPlayer.difficulty = difficulty
 	
 	state = GameState.new()
 	DeckManager.setup_game(state)
@@ -132,14 +138,13 @@ func player_declare_attack(attacker_uids: Array):
 		var u = state.get_unit_by_uid(uid)
 		if u: u.exhausted = true
 	
-	# attack_declares chỉ tăng 1 lần cho cả đợt tấn công
 	state.get_player(0).attack_declares += 1
 	state.phase = GameState.Phase.COMBAT_BLOCK
 	emit_signal("combat_started", attacker_uids)
 	emit_signal("log_message", "Player declare attack với %d unit!" % attacker_uids.size())
 	
 	# AI chọn block
-	var block_map = AIPlayer.decide_blockers(state, attacker_uids)
+	var block_map = mcts_ai.decide_blockers(state, attacker_uids) if ai_difficulty == AI_DIFFICULTY_MCTS else AIPlayer.decide_blockers(state, attacker_uids)
 	await get_tree().create_timer(0.8).timeout
 	_resolve_combat_phase(block_map)
 
@@ -170,7 +175,7 @@ func _run_ai_turn():
 	if state.phase == GameState.Phase.GAME_OVER:
 		return
 	
-	var action = AIPlayer.decide_action(state)
+	var action = mcts_ai.decide_action(state) if ai_difficulty == AI_DIFFICULTY_MCTS else AIPlayer.decide_action(state)
 	
 	match action.get("type", "pass"):
 		"summon":
@@ -254,10 +259,11 @@ func player_submit_blocks(block_map: Dictionary):
 #   COMBAT RESOLVE
 # ============================================================
 func _resolve_combat_phase(block_map: Dictionary):
-	state.block_assignments = block_map  # Lưu lại để UI có thể hiển thị
 	state.phase = GameState.Phase.COMBAT_RESOLVE
-	
-	var attacker_pid = state.attack_token_owner
+	var attacker_pid = 0 if state.attack_token_owner == 0 else 1
+	# Điều chỉnh: attacker_pid là ai vừa declare
+	# attackers là uid từ một bên, tìm owner
+	attacker_pid = 1
 	if not state.attackers.is_empty():
 		var first_uid = state.attackers[0]
 		var u = state.get_unit_by_uid(first_uid)
@@ -315,7 +321,6 @@ func _end_round():
 	state.check_win_condition()
 	
 	if state.winner != -1:
-		emit_signal("state_updated", state) # Cập nhật UI trước khi báo Game Over
 		emit_signal("game_over", state.winner)
 		return
 	
